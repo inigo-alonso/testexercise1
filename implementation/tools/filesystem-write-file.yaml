@@ -1,0 +1,23 @@
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Tool
+metadata:
+  name: filesystem-write-file
+  namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+spec:
+  type: mcp
+  description: "Write content to a file. Use files/output/ for generated reports. Supports .md and .html."
+  inputSchema:
+    type: object
+    properties:
+      path:
+        type: string
+        description: "Path to the file (relative to workspace, e.g. files/output/rfx-readiness-PR-123.md)"
+      content:
+        type: string
+        description: "Content to write (plain text, markdown, or HTML)"
+    required: ["path", "content"]
+  mcp:
+    serverRef:
+      name: filesystem
+      namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+    toolName: write_file

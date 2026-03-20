@@ -1,0 +1,11 @@
+Subject: Urgent – need RFQ started (brake pedal bracket)
+
+Hi Procurement,
+
+Can someone pick this up today? We need to move fast.
+
+This is for the brake pedal bracket — I believe it’s AT-00002-374 and PR might be 29189412 (not 100% sure, please confirm in SAP). Qty is small (I saw “2” somewhere) but we may need to increase once ops confirms. Delivery needed early Jan (again please sanity check what’s in the system).
+
+If anything’s missing, tell me what you need and I’ll chase Engineering.
+
+Thanks, Sofia

@@ -1,0 +1,21 @@
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: MCPServer
+metadata:
+  name: procurement-data
+  namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+spec:
+  address:
+    valueFrom:
+      serviceRef:
+        name: tool-excel-api
+        namespace: rapp
+        port: "http"
+  path: "/mcp"
+  timeout: "60s"
+  transport: http
+  description: "Procurement SAP data (Excel-backed)"
+  session:
+    - tool: procurement-data-excel-set-filepath
+      parameters:
+        - name: filepath
+          value: "files/input/SAP-DB.xlsx"

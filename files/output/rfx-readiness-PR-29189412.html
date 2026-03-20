@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RFx Readiness – PR 29189412</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --navy: #051C2C;
+      --navy-mid: #0A3D62;
+      --line: #D9D9D9;
+      --bg: #F5F5F5;
+      --text: #333;
+      --muted: #5C5C5C;
+      --teal: #00838F;
+      --white: #fff;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
+    .brand-bar { background: var(--navy); color: var(--white); padding: 0.6rem 2rem; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .doc-header { border-bottom: 2px solid var(--navy); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    h1 { font-size: 1.5rem; font-weight: 600; color: var(--navy); margin: 0 0 0.25rem; }
+    .meta { color: var(--muted); font-size: 0.9rem; }
+    h2 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--navy); margin: 2rem 0 0.75rem; padding-bottom: 0.35rem; border-bottom: 2px solid var(--navy); }
+    h2:first-of-type { margin-top: 0; }
+    .section { background: var(--white); border: 1px solid var(--line); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+    .exec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .exec-card { border: 1px solid var(--line); padding: 1rem; background: #FAFAFA; }
+    .exec-card .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .exec-card .val { font-size: 1.1rem; font-weight: 600; color: var(--navy); margin-top: 0.35rem; }
+    .exec-card .sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; }
+    .headline { font-size: 1.2rem; font-weight: 600; color: var(--navy); margin: 0.5rem 0; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    .chip { font-size: 0.7rem; font-weight: 600; padding: 0.25rem 0.5rem; border: 1px solid var(--line); text-transform: uppercase; letter-spacing: 0.05em; }
+    .chip.ready { background: #E8EEF2; border-color: var(--navy); color: var(--navy); }
+    .chip.blocked { background: #F5EBED; color: #6B2D3C; }
+    .chip.at-risk { background: #FFF8E6; color: #6B5A00; }
+    .chip.rfx { background: #E0F2F3; color: var(--teal); border-color: var(--teal); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.65rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #E8EEF2; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--navy); }
+    .bucket { font-size: 0.8rem; color: var(--navy); margin: 1rem 0 0.5rem; }
+    .ft { font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.35rem; border: 1px solid var(--line); }
+    .ft.fact { background: #E8EEF2; color: var(--navy); }
+    .ft.context { background: #FFF8E1; color: #6D5A1E; }
+    .sev.critical { color: #6B2D3C; font-weight: 600; }
+    .sev.moderate { color: #8D6E1F; font-weight: 600; }
+    .sev.informational { color: var(--muted); }
+    .caption { font-size: 0.8rem; color: var(--muted); margin: 0.5rem 0; }
+    .small { font-size: 0.8rem; color: var(--muted); }
+    .logic-list { margin: 0.5rem 0; padding-left: 1.25rem; }
+    .audit-list { list-style: none; padding: 0; margin: 0; }
+    .audit-list li { margin: 0.4rem 0; padding: 0.35rem 0; border-bottom: 1px solid #eee; }
+    .ft.ok { color: var(--navy); }
+    .ft.fail { color: #6B2D3C; }
+    .chart-wrap { height: 220px; margin: 1rem 0; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.9rem; margin-top: 0.6rem; }
+    .field { display: flex; flex-direction: column; gap: 0.25rem; }
+    label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    input, select, textarea { border: 1px solid var(--line); padding: 0.55rem; font: inherit; background: #fff; color: var(--text); }
+    textarea { min-height: 120px; resize: vertical; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    .btn { border: 1px solid var(--navy); background: var(--navy); color: #fff; padding: 0.45rem 0.75rem; cursor: pointer; font-size: 0.8rem; }
+    .btn.secondary { background: #fff; color: var(--navy); }
+    .action-link { display:inline-block; border:1px solid var(--navy); color:var(--navy); text-decoration:none; padding:0.25rem 0.45rem; font-size:0.75rem; }
+    .action-link:hover { background:#E8EEF2; }
+    .pill { display: inline-block; border: 1px solid var(--line); padding: 0.15rem 0.4rem; font-size: 0.68rem; margin-right: 0.25rem; }
+    .pill.manual { background: #FFF8E1; }
+    .pill.extracted { background: #E8EEF2; }
+    .intake-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; }
+    @media (max-width: 900px) { .intake-grid { grid-template-columns: 1fr; } }
+    .monospace { font-family: Consolas, 'Courier New', monospace; font-size: 0.78rem; }
+    footer { font-size: 0.7rem; color: var(--muted); margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+    code { font-size: 0.8rem; background: #f0f0f0; padding: 0.1rem 0.3rem; }
+  </style>
+</head>
+<body>
+  <div class="brand-bar">Procurement decision record</div>
+  <div class="container">
+    <header class="doc-header">
+      <h1>RFx readiness assessment</h1>
+      <p class="meta"><strong>PR</strong> 29189412 &nbsp;|&nbsp; <strong>Part</strong> AT-00002-374 &nbsp;|&nbsp; BRAKE PEDAL BRACKET &nbsp;|&nbsp; <strong>Generated</strong> 2026-03-20 11:29</p>
+    </header>
+
+    <section class="section" aria-labelledby="ex-sum">
+      <h2 id="ex-sum">Executive summary</h2>
+      <p class="headline">Go: proceed to RFx with ranked shortlist (5 primary invitees).</p>
+      <div class="chips">
+        <span class="chip ready">Readiness: READY</span>
+        <span class="chip rfx">RFx REQUIRED</span>
+        <span class="chip">Severity: Ready</span>
+        <span class="chip">Confidence: High</span>
+      </div>
+      <p class="caption"><strong>Overall confidence rationale:</strong> All modules grounded in explicit SAP fields and PO history for primary ranks.</p>
+      <div class="exec-grid">
+        <div class="exec-card"><div class="label">Go / Stop / Fix</div><div class="val">GO</div><div class="sub">Drawing and AUTO authority satisfied; mandatory fields present.</div></div>
+        <div class="exec-card"><div class="label">Who fixes (if blocked)</div><div class="val">—</div><div class="sub">See follow-up table</div></div>
+        <div class="exec-card"><div class="label">Primary invitees</div><div class="val">5</div><div class="sub">Ranked from PO + capability rules</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Module 1 — PR readiness (quote enablement only)</h2>
+      <p class="caption">Drawing and AUTO authority satisfied; mandatory fields present. <strong>Readiness confidence:</strong> High — Direct field reads from SAP_PR; no inference.</p>
+      <table>
+        <thead><tr><th>Criterion</th><th>Status</th><th>Severity</th><th>Evidence</th><th>Impact</th><th>Required action</th><th>Type</th></tr></thead>
+        <tbody><tr><td>Drawing / supporting material available</td><td>Met</td><td>—</td><td>SAP_PR.drawing_avlb = 'Y'</td><td>None</td><td>—</td><td><span class='ft fact'>FACT</span></td></tr><tr><td>Authority Grp = AUTO (quote enablement)</td><td>Met</td><td>—</td><td>SAP_PR.Authority Grp = 'AUTO'</td><td>None</td><td>—</td><td><span class='ft fact'>FACT</span></td></tr><tr><td>Mandatory PR fields (Open Qty, Delivery Date)</td><td>Met</td><td>—</td><td>Open Qty present: True; Delivery Date present: True</td><td>None</td><td>—</td><td><span class='ft fact'>FACT</span></td></tr></tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Module 2 — RFx requirement (routing)</h2>
+      <p class="caption"><strong>Decision:</strong> RFx REQUIRED. No contract on PR row → competitive quoting / RFx path per exercise routing logic. <strong>Routing confidence:</strong> High — Empty Contract on SAP_PR is explicit; no redundant 'confirm absence' follow-up.</p>
+      <table>
+        <thead><tr><th>Criterion</th><th>Source field</th><th>Result</th><th>Interpretation</th><th>Type</th></tr></thead>
+        <tbody><tr><td>Contract on PR</td><td>SAP_PR.Contract</td><td>(empty)</td><td>Direct procurement if populated; else RFx required</td><td><span class='ft fact'>FACT</span></td></tr></tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Module 3 — Supplier recommendation</h2>
+      <p class="caption"><strong>Supplier confidence:</strong> High — Primary shortlist dominated by exact-part PO history. Similar parts in SAP_PR sharing XPAC attributes: <strong>1</strong>. Preferred_vendors capability rows: <strong>24</strong>. Watchlist total <strong>24</strong> (table shows excerpt of <strong>24</strong> rows).</p>
+      <h3 class="bucket">Similarity logic used</h3>
+      <ol class='logic-list'><li>Same part number → Bucket A (Exact-part incumbents)</li><li>Same XPAC Manufacturing Process + Material Type + Material Form (other parts in SAP_PR) → Bucket B (Similar-part)</li><li>Preferred_vendors capability match on same triple, not already in A or B → Bucket C (Capability-based)</li></ol>
+      <h3 class='bucket'>Recommended primary invitees (ranked)</h3><table><thead><tr><th>Supplier</th><th>Match</th><th>Role</th><th>Score</th><th>Confidence</th><th>Orders</th><th>Last order</th><th>Evidence</th><th>Not promoted higher</th><th>Action</th></tr></thead><tbody><tr><td><strong>Northstar Logistics</strong></td><td>Exact-part</td><td>Primary</td><td>125</td><td>High</td><td>1</td><td>2025-12-15</td><td>FACT: PO_history rows with PART_NUMBER=AT-00002-374</td><td class='small'>—</td><td><a class='action-link' href='mailto:rfq%40northstar-logistics.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20Northstar%20Logistics%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr><tr><td><strong>BlueRiver Metals</strong></td><td>Exact-part</td><td>Primary</td><td>125</td><td>High</td><td>1</td><td>2025-07-17</td><td>FACT: PO_history rows with PART_NUMBER=AT-00002-374</td><td class='small'>—</td><td><a class='action-link' href='mailto:rfq%40blueriver-metals.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20BlueRiver%20Metals%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr><tr><td><strong>Falcon Industrial</strong></td><td>Exact-part</td><td>Primary</td><td>125</td><td>High</td><td>1</td><td>2025-07-17</td><td>FACT: PO_history rows with PART_NUMBER=AT-00002-374</td><td class='small'>—</td><td><a class='action-link' href='mailto:rfq%40falcon-industrial.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20Falcon%20Industrial%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr><tr><td><strong>Falcon Fasteners</strong></td><td>Exact-part</td><td>Primary</td><td>125</td><td>High</td><td>1</td><td>2025-08-26</td><td>FACT: PO_history rows with PART_NUMBER=AT-00002-374</td><td class='small'>—</td><td><a class='action-link' href='mailto:rfq%40falcon-fasteners.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20Falcon%20Fasteners%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr><tr><td><strong>Stonegate Metals</strong></td><td>Exact-part</td><td>Primary</td><td>115</td><td>High</td><td>1</td><td>2025-04-24</td><td>FACT: PO_history rows with PART_NUMBER=AT-00002-374</td><td class='small'>—</td><td><a class='action-link' href='mailto:rfq%40stonegate-metals.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20Stonegate%20Metals%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr></tbody></table>
+      <h3 class='bucket'>Secondary / backup</h3><table><thead><tr><th>Supplier</th><th>Match</th><th>Role</th><th>Score</th><th>Confidence</th><th>Orders</th><th>Last order</th><th>Evidence</th><th>Not promoted higher</th><th>Action</th></tr></thead><tbody><tr><td><strong>IronPeak Precision</strong></td><td>Exact-part</td><td>Secondary</td><td>115</td><td>High</td><td>1</td><td>2025-02-25</td><td>FACT: PO_history rows with PART_NUMBER=AT-00002-374</td><td class='small'>—</td><td><a class='action-link' href='mailto:rfq%40ironpeak-precision.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20IronPeak%20Precision%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr><tr><td><strong>IronPeak Coatings</strong></td><td>Exact-part</td><td>Secondary</td><td>115</td><td>High</td><td>1</td><td>2025-01-08</td><td>FACT: PO_history rows with PART_NUMBER=AT-00002-374</td><td class='small'>—</td><td><a class='action-link' href='mailto:rfq%40ironpeak-coatings.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20IronPeak%20Coatings%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr><tr><td><strong>Redwood Industrial</strong></td><td>Exact-part</td><td>Secondary</td><td>115</td><td>High</td><td>1</td><td>2025-06-07</td><td>FACT: PO_history rows with PART_NUMBER=AT-00002-374</td><td class='small'>—</td><td><a class='action-link' href='mailto:rfq%40redwood-industrial.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20Redwood%20Industrial%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr><tr><td><strong>Northstar Assembly</strong></td><td>Exact-part</td><td>Secondary</td><td>115</td><td>High</td><td>1</td><td>2025-01-21</td><td>FACT: PO_history rows with PART_NUMBER=AT-00002-374</td><td class='small'>—</td><td><a class='action-link' href='mailto:rfq%40northstar-assembly.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20Northstar%20Assembly%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr><tr><td><strong>Redwood Logistics</strong></td><td>Similar-part</td><td>Secondary</td><td>80</td><td>Medium</td><td>1</td><td>2025-09-28</td><td>FACT: PO_history for similar parts (same mfg/material/form, ≠ AT-00002-374)</td><td class='small'>No exact-part history for requested part number</td><td><a class='action-link' href='mailto:rfq%40redwood-logistics.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20Redwood%20Logistics%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr><tr><td><strong>Prairie Electronics</strong></td><td>Similar-part</td><td>Secondary</td><td>80</td><td>Medium</td><td>1</td><td>2025-11-21</td><td>FACT: PO_history for similar parts (same mfg/material/form, ≠ AT-00002-374)</td><td class='small'>No exact-part history for requested part number</td><td><a class='action-link' href='mailto:rfq%40prairie-electronics.example.com?subject=RFx%20invitation%20for%20PR%2029189412%20/%20Part%20AT-00002-374&body=Hello%20Prairie%20Electronics%2C%0A%0AWe%20are%20launching%20an%20RFx%20for%20PR%2029189412%20%28AT-00002-374%29.%0APlease%20confirm%20participation%20and%20provide%20quotation%20details.%0A%0ARequested%20fields%3A%0A-%20Unit%20price%20and%20currency%0A-%20Lead%20time%0A-%20Validity%20date%0A-%20Notes%20/%20assumptions%0A%0ARegards%2C%0AProcurement'>Send email</a></td></tr></tbody></table>
+      <h3 class='bucket'>Watchlist / not prioritized (excerpt)</h3><table><thead><tr><th>Supplier</th><th>Match</th><th>Role</th><th>Score</th><th>Confidence</th><th>Orders</th><th>Last order</th><th>Evidence</th><th>Not promoted higher</th><th>Action</th></tr></thead><tbody><tr><td><strong>Stonegate Fabrication</strong></td><td>Similar-part</td><td>Watchlist / not prioritized</td><td>80</td><td>Medium</td><td>1</td><td>2025-09-08</td><td>FACT: PO_history for similar parts (same mfg/material/form, ≠ AT-00002-374)</td><td class='small'>No exact-part history for requested part number</td><td><span class='small'>—</span></td></tr><tr><td><strong>Atlas Assembly</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Atlas Stamping</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Atlas Wiring</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Beacon Precision</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>BlueRiver Industrial</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Cedar Coatings</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Clearwater Industrial</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Clearwater Stamping</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Cobalt Fasteners</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Falcon Coatings</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Falcon Machining</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Harbor Electronics</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Horizon Metals</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Northstar Fasteners</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Prairie Metals</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Prairie Plastics</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Riverview Industrial</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Sierra Components</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Silverline Electronics</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Stonegate Industrial</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Summit Fasteners</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Summit Industrial</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr><tr><td><strong>Summit Stamping</strong></td><td>Capability-based</td><td>Watchlist / not prioritized</td><td>28</td><td>Low</td><td>0</td><td>—</td><td>FACT: Preferred_vendors row matching process/type/form; no PO history for this PR in buckets A/B</td><td class='small'>No purchase history in dataset for this part or similar parts</td><td><span class='small'>—</span></td></tr></tbody></table>
+    </section>
+
+    <section class="section">
+      <h2>Risks & considerations</h2>
+      <table><thead><tr><th>Risk / flag</th><th>Severity</th><th>Detail</th></tr></thead><tbody><tr><td>Incumbent concentration</td><td><span class='sev informational'>Informational</span></td><td>5 primary invitees; validate competitiveness / policy caps.</td></tr><tr><td>Capability-based tier in ranked shortlist</td><td><span class='sev informational'>Informational</span></td><td>No capability-only suppliers in Primary/Secondary; capability matches on watchlist only.</td></tr><tr><td>No unit pricing in PO data</td><td><span class='sev moderate'>Moderate</span></td><td>Commercial benchmark NOT_AVAILABLE from dataset</td></tr><tr><td>Contract master not integrated</td><td><span class='sev informational'>Informational</span></td><td>Routing uses PR.Contract field only</td></tr></tbody></table>
+    </section>
+
+    <section class="section">
+      <h2>Follow-ups & ownership</h2>
+      <table><thead><tr><th>Action</th><th>Why</th><th>Owner</th><th>Urgency</th><th>Blocks RFx?</th><th>Module</th></tr></thead><tbody><tr><td colspan='6'>None required for this PR under current rules.</td></tr></tbody></table>
+    </section>
+
+    <section class="section">
+      <h2>Email intake to JSON (no Excel)</h2>
+      <p class="caption">Paste inbound email from suppliers or PR stakeholders. The parser auto-detects schema, extracts fields, labels inferred gaps as <code>NOT_AVAILABLE</code>, and lets Procurement review/edit before export.</p>
+      <div class="intake-grid">
+        <div>
+          <div class="field">
+            <label for="intakeEmailText">Inbound email content</label>
+            <textarea id="intakeEmailText" style="min-height:220px;"></textarea>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="parseIntakeBtn" type="button">Parse email</button>
+            <button class="btn secondary" id="resetIntakeBtn" type="button">Reset</button>
+          </div>
+        </div>
+        <div>
+          <p class="caption"><strong>Detected schema:</strong> <span id="detectedSchema">NOT_AVAILABLE</span></p>
+          <p class="caption"><strong>Parser confidence:</strong> <span id="parseConfidence">NOT_AVAILABLE</span></p>
+          <p class="caption"><strong>Unknown / missing:</strong> <span id="missingFields">NOT_AVAILABLE</span></p>
+          <p class="caption"><strong>Field legend:</strong> <span class="pill extracted">EXTRACTED</span><span class="pill manual">MANUAL_EDIT</span></p>
+        </div>
+      </div>
+      <div id="intakeFields" class="form-grid" style="margin-top:0.75rem;"></div>
+      <div class="btn-row">
+        <button class="btn" id="exportIntakeBtn" type="button">Export parsed JSON</button>
+      </div>
+      <p class="caption">To append into local intake store: <code>python run_analysis.py --append-intake path\to\exported-intake.json</code></p>
+      <div class="field">
+        <label for="intakeJsonPreview">Reviewed JSON preview</label>
+        <textarea id="intakeJsonPreview" class="monospace" style="min-height:140px;" readonly></textarea>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Data & confidence by module</h2>
+      <table>
+        <thead><tr><th>Module</th><th>Sources</th><th>Confidence</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td>PR Readiness</td><td>SAP_PR (drawing_avlb, Authority Grp, Open Qty, Delivery Date)</td><td>High</td><td>Direct field reads from SAP_PR; no inference.</td></tr>
+          <tr><td>RFx routing</td><td>SAP_PR.Contract</td><td>High</td><td>Empty Contract on SAP_PR is explicit; no redundant 'confirm absence' follow-up.</td></tr>
+          <tr><td>Suppliers</td><td>PO_history; SAP_PR (similarity); Preferred_vendors</td><td>High</td><td>Primary shortlist dominated by exact-part PO history.</td></tr>
+        </tbody>
+      </table>
+      <p class="caption"><strong>Gaps:</strong> No unit price column used for competitiveness; vendor contacts NOT_AVAILABLE in dataset.</p>
+    </section>
+
+    <section class="section">
+      <h2>Decision audit / traceability</h2>
+      <p><strong>Decision path:</strong> PR 29189412 loaded from SAP_PR → Module 1 readiness (READY) → Module 2 routing (RFx REQUIRED) → PO_history exact-part → similar parts via SAP_PR XPAC match → Preferred_vendors capability gap-fill → score/rank → primary/secondary/watchlist</p>
+      <h3 class="bucket">Rules applied</h3>
+      <ul class="logic-list"><li>drawing_avlb required for readiness (quote enablement)</li><li>Authority Grp = AUTO required for readiness</li><li>Contract populated → RFx NOT REQUIRED; empty → RFx REQUIRED</li><li>Supplier hierarchy: exact part → similar part (same XPAC triple) → capability match</li><li>Ranking: score = tier base + recency + order count</li></ul>
+    </section>
+
+    <section class="section">
+      <h2>Validation / anti-hallucination</h2>
+      <ul class='audit-list'><li><span class='ft ok'>PASS</span> PR exists in SAP_PR — <code>PR 29189412</code></li><li><span class='ft ok'>PASS</span> Part number on PR row — <code>AT-00002-374</code></li><li><span class='ft ok'>PASS</span> Primary suppliers each appear in PO_history or Preferred_vendors — <code>Verified per row source</code></li><li><span class='ft ok'>PASS</span> No invented supplier names — <code>All names from tool output</code></li><li><span class='ft ok'>PASS</span> Supplier counts consistent (primary + secondary + watchlist) — <code>Primary=5, Secondary=6, Watchlist total=24, table excerpt rows=24</code></li></ul>
+      <p class='caption'><strong>Claims without direct data:</strong> Preferred_vendors had capability rows but none ranked above watchlist threshold vs PO incumbents — shortlist unchanged by capability tier for primary set.</p>
+      <p class='caption'><strong>Manual review required:</strong> None.</p>
+      <p class='caption'><strong>Excluded unsupported claims:</strong> None — all named suppliers and routing facts trace to SAP_PR, PO_history, or Preferred_vendors.</p>
+    </section>
+
+    <section class="section">
+      <h2>Supplemental commercial context (exercise files only)</h2>
+      <p class="caption">Not used to qualify suppliers. Optional comparison for PR 29189412.</p>
+      <table>
+        <thead><tr><th>Supplier</th><th>Source</th><th>Indicative</th><th>Type</th></tr></thead>
+        <tbody><tr><td>BlueRiver Metals</td><td>Supplemental quote Jan 2026 (exercise file)</td><td>€465 / unit</td><td><span class='ft context'>CONTEXT</span></td></tr><tr><td>Evergreen Stamping</td><td>Supplemental quote Jan 2026 (exercise file)</td><td>€470 / unit</td><td><span class='ft context'>CONTEXT</span></td></tr></tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Appendix — PO history (exact part)</h2>
+      <div class="chart-wrap"><canvas id="vendorChart"></canvas></div>
+      <p class="caption">Historical units by vendor for PART_NUMBER = AT-00002-374</p>
+      <table>
+        <thead><tr><th>Vendor</th><th>Order date</th><th>Qty</th></tr></thead>
+        <tbody><tr><td>Northstar Logistics</td><td>2025-12-15</td><td>49</td></tr><tr><td>BlueRiver Metals</td><td>2025-07-17</td><td>75</td></tr><tr><td>Stonegate Metals</td><td>2025-04-24</td><td>111</td></tr><tr><td>Falcon Industrial</td><td>2025-07-17</td><td>130</td></tr><tr><td>IronPeak Precision</td><td>2025-02-25</td><td>109</td></tr><tr><td>Falcon Fasteners</td><td>2025-08-26</td><td>102</td></tr><tr><td>IronPeak Coatings</td><td>2025-01-08</td><td>69</td></tr><tr><td>Redwood Industrial</td><td>2025-06-07</td><td>68</td></tr><tr><td>Northstar Assembly</td><td>2025-01-21</td><td>111</td></tr></tbody>
+      </table>
+    </section>
+
+    <footer>Structured for any PR — replace inputs from SAP_PR / PO_history / Preferred_vendors. Data: SAP-DB.xlsx.</footer>
+  </div>
+  <script>
+    const intakeSchemaFields = {"rfx_quote": ["supplier_name", "part_number", "qty", "unit_price", "currency", "lead_time", "validity_date", "notes"], "pr_update": ["pr_number", "status", "blocker", "owner", "due_date", "notes"]};
+
+    const intakeEmailText = document.getElementById('intakeEmailText');
+    const intakeFields = document.getElementById('intakeFields');
+    const detectedSchema = document.getElementById('detectedSchema');
+    const parseConfidence = document.getElementById('parseConfidence');
+    const missingFields = document.getElementById('missingFields');
+    const intakeJsonPreview = document.getElementById('intakeJsonPreview');
+    let lastParsed = null;
+
+    function detectSchema(text) {
+      const low = text.toLowerCase();
+      const quoteScore = ['unit price', 'currency', 'lead time', 'quotation', 'offer', 'validity'].filter((k) => low.includes(k)).length;
+      const prScore = ['pr ', 'purchase requisition', 'blocker', 'owner', 'due date', 'status'].filter((k) => low.includes(k)).length;
+      if (quoteScore === prScore) return 'rfx_quote';
+      return quoteScore > prScore ? 'rfx_quote' : 'pr_update';
+    }
+
+    function matchValue(text, pattern) {
+      const m = text.match(pattern);
+      if (!m) return 'NOT_AVAILABLE';
+      for (let i = 1; i < m.length; i += 1) {
+        if (m[i]) return String(m[i]).replace(/^[\s*`_]+|[\s*`_]+$/g, '').trim();
+      }
+      return 'NOT_AVAILABLE';
+    }
+
+    function chooseValue(...vals) {
+      for (const v of vals) {
+        if (v && v !== 'NOT_AVAILABLE') return v;
+      }
+      return 'NOT_AVAILABLE';
+    }
+
+    function parseRfxQuote(text) {
+      const tableMatch = text.match(/\|\s*([A-Z0-9\-]+)\s*\|[^\n\r]*\|\s*([0-9]+)\s*\|\s*([0-9]+(?:\.[0-9]+)?)\s*\|/i);
+      const partFromTable = tableMatch ? tableMatch[1] : 'NOT_AVAILABLE';
+      const qtyFromTable = tableMatch ? tableMatch[2] : 'NOT_AVAILABLE';
+      const priceFromTable = tableMatch ? tableMatch[3] : 'NOT_AVAILABLE';
+      const currencyFromText = text.match(/\(EUR\)/i) ? 'EUR' : 'NOT_AVAILABLE';
+      return {
+        supplier_name: matchValue(text, /(?:company|supplier)\*?\*?\s*[:\-]\s*\*?\*?\s*([^\n\r]+)/i),
+        part_number: chooseValue(matchValue(text, /(part\s*(?:number|no\.?))\s*[:\-]\s*([^\n\r]+)/i), partFromTable),
+        qty: chooseValue(matchValue(text, /(?:qty|quantity)\s*[:\-]\s*([^\n\r]+)/i), qtyFromTable),
+        unit_price: chooseValue(matchValue(text, /(?:unit\s*price(?:\s*\(eur\))?|price\s*per\s*unit)\s*[:\-]?\s*([^\n\r]+)/i), priceFromTable),
+        currency: chooseValue(matchValue(text, /currency\s*[:\-]\s*([^\n\r]+)/i), currencyFromText),
+        lead_time: matchValue(text, /(?:lead\s*time|earliest\s*delivery\s*date)\s*[:\-]\s*([^\n\r]+)/i),
+        validity_date: matchValue(text, /validity(?:\s*date)?\s*[:\-]\s*([^\n\r]+)/i),
+        notes: matchValue(text, /(?:notes?|assumptions?)\s*[:\-]\s*([^\n\r]+)/i),
+      };
+    }
+
+    function parsePrUpdate(text) {
+      return {
+        pr_number: chooseValue(
+          matchValue(text, /pr\s*(?:number|no\.?)\s*\*?\*?\s*[:\-]\s*\*?\*?\s*([0-9]{6,})/i),
+          matchValue(text, /\b([0-9]{8,})\b/)
+        ),
+        status: matchValue(text, /status\s*[:\-]\s*([^\n\r]+)/i),
+        blocker: matchValue(text, /blocker\s*[:\-]\s*([^\n\r]+)/i),
+        owner: matchValue(text, /owner\s*[:\-]\s*([^\n\r]+)/i),
+        due_date: matchValue(text, /due\s*date\s*[:\-]\s*([^\n\r]+)/i),
+        notes: matchValue(text, /notes?\s*[:\-]\s*([^\n\r]+)/i),
+      };
+    }
+
+    function renderParsedFields(schema, fields, extractedSet) {
+      intakeFields.innerHTML = '';
+      fields.forEach((fieldName) => {
+        const val = (lastParsed.payload[fieldName] || 'NOT_AVAILABLE');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'field';
+        const label = document.createElement('label');
+        label.htmlFor = `field_${fieldName}`;
+        label.textContent = fieldName;
+        const input = document.createElement('input');
+        input.id = `field_${fieldName}`;
+        input.value = val;
+        input.dataset.field = fieldName;
+        input.addEventListener('input', () => {
+          lastParsed.payload[fieldName] = input.value.trim() || 'NOT_AVAILABLE';
+          const extracted = extractedSet.has(fieldName) ? 'extracted' : 'manual';
+          input.className = extracted;
+          updatePreview();
+        });
+        const tag = document.createElement('span');
+        tag.className = `pill ${extractedSet.has(fieldName) ? 'extracted' : 'manual'}`;
+        tag.textContent = extractedSet.has(fieldName) ? 'EXTRACTED' : 'MANUAL_EDIT';
+        wrapper.appendChild(label);
+        wrapper.appendChild(input);
+        wrapper.appendChild(tag);
+        intakeFields.appendChild(wrapper);
+      });
+    }
+
+    function updatePreview() {
+      intakeJsonPreview.value = JSON.stringify(lastParsed, null, 2);
+      const missing = Object.entries(lastParsed.payload)
+        .filter(([, v]) => !v || v === 'NOT_AVAILABLE')
+        .map(([k]) => k);
+      missingFields.textContent = missing.length ? missing.join(', ') : 'None';
+      parseConfidence.textContent = missing.length <= 1 ? 'High' : (missing.length <= 3 ? 'Medium' : 'Low');
+    }
+
+    function parseIntakeText() {
+      const text = intakeEmailText.value || '';
+      const schema = detectSchema(text);
+      const parsed = schema === 'rfx_quote' ? parseRfxQuote(text) : parsePrUpdate(text);
+      const extractedSet = new Set(
+        Object.entries(parsed).filter(([, v]) => v && v !== 'NOT_AVAILABLE').map(([k]) => k)
+      );
+      detectedSchema.textContent = schema;
+      lastParsed = {
+        schema_type: schema,
+        parsed_at: new Date().toISOString(),
+        source: 'pasted_email',
+        payload: parsed,
+      };
+      renderParsedFields(schema, intakeSchemaFields[schema] || Object.keys(parsed), extractedSet);
+      updatePreview();
+    }
+
+    document.getElementById('parseIntakeBtn').addEventListener('click', parseIntakeText);
+    document.getElementById('resetIntakeBtn').addEventListener('click', () => {
+      intakeEmailText.value = '';
+      intakeFields.innerHTML = '';
+      detectedSchema.textContent = 'NOT_AVAILABLE';
+      parseConfidence.textContent = 'NOT_AVAILABLE';
+      missingFields.textContent = 'NOT_AVAILABLE';
+      intakeJsonPreview.value = '';
+      lastParsed = null;
+    });
+
+    document.getElementById('exportIntakeBtn').addEventListener('click', () => {
+      if (!lastParsed) return;
+      const blob = new Blob([JSON.stringify([lastParsed], null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `intake-${lastParsed.schema_type}-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+
+    const chartCanvas = document.getElementById('vendorChart');
+    if (chartCanvas && window.Chart) {
+      const ctx = chartCanvas.getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ["BlueRiver Metals", "Falcon Fasteners", "Falcon Industrial", "IronPeak Coatings", "IronPeak Precision", "Northstar Assembly", "Northstar Logistics", "Redwood Industrial", "Stonegate Metals"],
+          datasets: [{
+            label: 'Units',
+            data: [75, 102, 130, 69, 109, 111, 49, 68, 111],
+            backgroundColor: 'rgba(5, 28, 44, 0.75)',
+            borderColor: 'rgb(5, 28, 44)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { color: '#5C5C5C' }, grid: { color: '#E8E8E8' } },
+            x: { ticks: { color: '#5C5C5C', maxRotation: 45 }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+  </script>
+</body>
+</html>

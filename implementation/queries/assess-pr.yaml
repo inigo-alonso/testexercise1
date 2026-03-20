@@ -1,0 +1,11 @@
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Query
+metadata:
+  name: assess-pr
+  namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+spec:
+  input: "Assess RFx readiness for Purchase Request 29189412"
+  targets:
+    - type: agent
+      name: rfx-readiness-agent
+  timeout: 5m0s

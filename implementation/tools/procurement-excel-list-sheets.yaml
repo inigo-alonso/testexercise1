@@ -1,0 +1,16 @@
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Tool
+metadata:
+  name: procurement-excel-list-sheets
+  namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+spec:
+  type: mcp
+  description: "List all sheet names in the SAP-DB Excel file."
+  inputSchema:
+    type: object
+    properties: {}
+  mcp:
+    serverRef:
+      name: procurement-data
+      namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+    toolName: list_sheets

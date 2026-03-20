@@ -1,0 +1,20 @@
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Tool
+metadata:
+  name: filesystem-read-file
+  namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+spec:
+  type: mcp
+  description: "Read content from a file. Use path relative to workspace (e.g. files/input/example.txt, files/output/report.md)."
+  inputSchema:
+    type: object
+    properties:
+      path:
+        type: string
+        description: "Path to the file (relative to workspace)"
+    required: ["path"]
+  mcp:
+    serverRef:
+      name: filesystem
+      namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+    toolName: read_file

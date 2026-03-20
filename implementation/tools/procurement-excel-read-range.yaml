@@ -1,0 +1,23 @@
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Tool
+metadata:
+  name: procurement-excel-read-range
+  namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+spec:
+  type: mcp
+  description: "Read a range of cells from the SAP-DB Excel file. Use to query Purchase Requests, Purchase Order History, or Preferred Vendors sheets."
+  inputSchema:
+    type: object
+    properties:
+      sheet_name:
+        type: string
+        description: "Sheet name: 'Purchase Requests', 'Purchase Order History', or 'Preferred Vendors'"
+      range:
+        type: string
+        description: "Excel range (e.g. A1:Z100) or 'all' for entire sheet"
+    required: ["sheet_name", "range"]
+  mcp:
+    serverRef:
+      name: procurement-data
+      namespace: exercise-rfx-procurement-mmxoipnj-p6va6n
+    toolName: read_range
